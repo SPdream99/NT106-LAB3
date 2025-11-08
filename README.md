@@ -1,4 +1,4 @@
-# LAB 3 NT106.Q14
+# LAB 3 NT106.Q14 - Lập trình Sockets trong C#
 
 Bài tập trên GitHub để nộp cho giáo viên lớp NT106.Q14 UIT VNUHCM 2025
 
@@ -13,8 +13,6 @@ Bài tập trên GitHub để nộp cho giáo viên lớp NT106.Q14 UIT VNUHCM 2
 | SV1  |   2XXXXXX     |
 | SV2  |   2XXXXXX     |
 | SV3   |   2XXXXXX     |
-
-Lập trình Sockets trong C#
 
 ## Phần mềm cần thiết
 
