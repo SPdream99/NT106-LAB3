@@ -4,8 +4,15 @@ Bài tập trên GitHub để nộp cho giáo viên lớp NT106.Q14 UIT VNUHCM 2
 
 - Lớp học: NT106.Q14
 - Giáo viên hướng dẫn: ThS. Lê Minh Khánh Hội
-- Tên sinh viên: Nguyễn Nhật Anh  
-- MSSV: 24520112
+
+## THÔNG TIN CÁC THÀNH VIÊN
+| Tên thành viên   |      MSSV      |
+|------------------|:--------------:|
+| Nguyễn Nhật Anh  |   24520112     |
+| Nguyễn Hoàng Anh  |   24520102     |
+| SV1  |   2XXXXXX     |
+| SV2  |   2XXXXXX     |
+| SV3   |   2XXXXXX     |
 
 Lập trình Sockets trong C#
 
@@ -31,7 +38,7 @@ cd "NT106-LAB3\Lab3"
 start Lab3.slnx
 ```
 
-### 4. Build và chạy Lab02
+### 4. Build và chạy Lab03
 * Set Lab3 thành Startup Project
 * Debug -> Start Debugging
 
