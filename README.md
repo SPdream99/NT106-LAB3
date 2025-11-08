@@ -16,7 +16,6 @@ Bài tập trên GitHub để nộp cho giáo viên lớp NT106.Q14 UIT VNUHCM 2
 
 Lập trình Sockets trong C#
 
-Hướng dẫn sử dụng:
 ## Phần mềm cần thiết
 
 * [Visual Studio 2022](https://visualstudio.microsoft.com/vs/)
