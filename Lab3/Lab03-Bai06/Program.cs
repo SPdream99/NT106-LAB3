@@ -16,7 +16,7 @@ namespace Lab03_Bai06
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            Application.Run(new Lab3B6());
         }
     }
 }
