@@ -64,15 +64,16 @@
             this.Button_Client.UseVisualStyleBackColor = true;
             this.Button_Client.Click += new System.EventHandler(this.Button_Client_Click);
             // 
-            // Form1
+            // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
             this.ClientSize = new System.Drawing.Size(800, 274);
             this.Controls.Add(this.Button_Client);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.Button_OpenServer);
-            this.Name = "Form1";
+            this.Name = "MainForm";
             this.Text = "Bài 1";
             this.ResumeLayout(false);
 
