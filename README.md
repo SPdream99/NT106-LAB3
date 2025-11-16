@@ -36,7 +36,7 @@ start Lab3.slnx
 ```
 
 ### 4. Build và chạy Lab03
-* Set Lab3 thành Startup Project
+* Set project (Bài) muốn chạy thành Startup Project
 * Debug -> Start Debugging
 
 ### 5. Sử dụng ứng dụng
