@@ -12,7 +12,7 @@ Bài tập trên GitHub để nộp cho giáo viên lớp NT106.Q14 UIT VNUHCM 2
 | Nguyễn Hoàng Anh  |   24520102     |
 | Huỳnh Hoàng Tứ Văn |   24521977     |
 | Trần Huy Vũ  |   24522043     |
-| SV3   |   2XXXXXX     |
+| Lê Nguyễn Phương Vy   |   24522056     |
 
 ## Phần mềm cần thiết
 
