@@ -16,7 +16,8 @@ namespace Lab03_Bai05
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            DatabaseHelper.InitializeDatabase();
+            Application.Run(new Lab305());
         }
     }
 }
