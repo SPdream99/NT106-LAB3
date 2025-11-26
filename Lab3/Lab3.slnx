@@ -3,6 +3,7 @@
   <Project Path="Lab03-Bai02/Lab03-Bai02.csproj" Id="37ee37e4-1982-475b-a300-e324e1ee8ab1" />
   <Project Path="Lab03-Bai03/Lab03-Bai03.csproj" Id="4cf855b9-91ed-4239-b63b-1d1c30795029" />
   <Project Path="Lab03-Bai04/Lab03-Bai04.csproj" Id="b9fc36a6-ef7f-4449-89b8-d2c4d98b7aaa" />
+  <Project Path="Lab03-Bai04Server/Lab03-Bai04Server.csproj" Id="aadfa9d2-22b1-4377-a371-1d0597ced50f" />
   <Project Path="Lab03-Bai05/Lab03-Bai05.csproj" Id="b5299504-7adb-4ef9-9341-fc6c6a4a4e28" />
   <Project Path="Lab03-Bai06/Lab03-Bai06.csproj" Id="d6905d61-c152-4425-b244-04bc55f92830" />
 </Solution>

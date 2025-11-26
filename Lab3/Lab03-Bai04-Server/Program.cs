@@ -1,161 +1,275 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.IO;
 using System.Text;
 using System.Threading;
 
 namespace Lab03_Bai04_Server
 {
-    class Seat
+    internal class Program
     {
-        public int Id;
-        public bool Booked;
-        public string By;
-    }
-
-    class Program
-    {
-        static List<Seat> seats = new List<Seat>();
-        static object lockSeats = new object();
-        static List<StreamWriter> clients = new List<StreamWriter>();
-        static object lockClients = new object();
+        // Danh sách ghế và danh sách client đang kết nối
+        private static readonly List<Seat> Seats = new List<Seat>();
+        private static readonly List<ClientHandler> Clients = new List<ClientHandler>();
+        private static readonly object _lock = new object();
 
         static void Main(string[] args)
         {
-            Console.Title = "SERVER - Lab03 Bai04";
-            // tạo danh sách ghế mẫu
-            for (int i = 1; i <= 10; i++)
-                seats.Add(new Seat { Id = i, Booked = false, By = "" });
+            Console.OutputEncoding = Encoding.UTF8;
+
+            InitSeats(); // tạo sẵn vài ghế mẫu
 
             int port = 8080;
-            TcpListener listener = new TcpListener(IPAddress.Any, port);
+            var listener = new TcpListener(IPAddress.Any, port);
             listener.Start();
-            Console.WriteLine($"=== SERVER đang lắng nghe trên PORT {port} ===");
 
+            Console.WriteLine($"Server started on port {port}. Waiting for clients...");
+
+            while (true)
+            {
+                // chấp nhận client mới
+                TcpClient tcpClient = listener.AcceptTcpClient();
+                Console.WriteLine("New client connected.");
+
+                var handler = new ClientHandler(tcpClient);
+                lock (_lock)
+                {
+                    Clients.Add(handler);
+                }
+
+                var t = new Thread(handler.Run) { IsBackground = true };
+                t.Start();
+            }
+        }
+
+        /// <summary>
+        /// Khởi tạo 20 ghế mặc định (1..20), trạng thái Free.
+        /// Nếu bạn muốn đọc từ file thì sửa hàm này.
+        /// </summary>
+        private static void InitSeats()
+        {
+            for (int i = 1; i <= 20; i++)
+            {
+                Seats.Add(new Seat
+                {
+                    Id = i,
+                    IsBooked = false,
+                    BookedBy = ""
+                });
+            }
+        }
+
+        /// <summary>
+        /// Lấy ghế theo id (đã lock).
+        /// </summary>
+        internal static Seat? GetSeat(int id)
+        {
+            lock (_lock)
+            {
+                return Seats.FirstOrDefault(s => s.Id == id);
+            }
+        }
+
+        /// <summary>
+        /// Broadcast trạng thái ghế tới tất cả client.
+        /// Gửi: UPDATE id status bookedBy
+        /// </summary>
+        internal static void BroadcastSeat(Seat seat)
+        {
+            string msg = $"UPDATE {seat.Id} {seat.Status} {seat.BookedBy}".TrimEnd();
+
+            lock (_lock)
+            {
+                foreach (var c in Clients.ToList())
+                {
+                    try { c.Send(msg); }
+                    catch { /* bỏ qua client lỗi */ }
+                }
+            }
+
+            Console.WriteLine("Broadcast: " + msg);
+        }
+
+        /// <summary>
+        /// Xóa client khi ngắt kết nối.
+        /// </summary>
+        internal static void RemoveClient(ClientHandler handler)
+        {
+            lock (_lock)
+            {
+                Clients.Remove(handler);
+            }
+        }
+
+        /// <summary>
+        /// Gửi toàn bộ danh sách ghế cho 1 client (khi client gửi LIST).
+        /// Mỗi ghế: SEAT id status bookedBy
+        /// </summary>
+        internal static void SendAllSeats(ClientHandler handler)
+        {
+            lock (_lock)
+            {
+                foreach (var s in Seats)
+                {
+                    string line = $"SEAT {s.Id} {s.Status} {s.BookedBy}".TrimEnd();
+                    handler.Send(line);
+                }
+            }
+        }
+    }
+
+    internal class ClientHandler
+    {
+        private readonly TcpClient _client;
+        private readonly StreamReader _reader;
+        private readonly StreamWriter _writer;
+        private bool _running = true;
+
+        public ClientHandler(TcpClient client)
+        {
+            _client = client;
+            NetworkStream ns = client.GetStream();
+            _reader = new StreamReader(ns, Encoding.UTF8);
+            _writer = new StreamWriter(ns, Encoding.UTF8) { AutoFlush = true };
+        }
+
+        public void Send(string msg)
+        {
+            _writer.WriteLine(msg);
+        }
+
+        public void Run()
+        {
             try
             {
-                while (true)
+                while (_running)
                 {
-                    TcpClient client = listener.AcceptTcpClient(); // blocking — server sẽ không exit
-                    Console.WriteLine($"Client connected: {client.Client.RemoteEndPoint}");
-                    ThreadPool.QueueUserWorkItem(HandleClient, client);
+                    string? line = _reader.ReadLine();
+                    if (line == null) break;
+
+                    Console.WriteLine("Received: " + line);
+                    HandleCommand(line);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Listener stopped: " + ex.Message);
+                Console.WriteLine("Client error: " + ex.Message);
             }
             finally
             {
-                listener.Stop();
+                _client.Close();
+                Program.RemoveClient(this);
+                Console.WriteLine("Client disconnected.");
             }
         }
 
-        static void HandleClient(object obj)
+        private void HandleCommand(string line)
         {
-            TcpClient tcp = (TcpClient)obj;
-            using (NetworkStream ns = tcp.GetStream())
-            using (StreamReader reader = new StreamReader(ns, Encoding.UTF8))
-            using (StreamWriter writer = new StreamWriter(ns, Encoding.UTF8) { AutoFlush = true })
-            {
-                lock (lockClients) clients.Add(writer);
-                SendSeatList(writer);
+            if (string.IsNullOrWhiteSpace(line)) return;
 
-                try
-                {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
+            var parts = line.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
+            string cmd = parts[0].ToUpperInvariant();
+
+            switch (cmd)
+            {
+                case "LIST":
+                    Program.SendAllSeats(this);
+                    break;
+
+                case "BOOK":
+                    if (parts.Length < 3)
                     {
-                        Console.WriteLine($"[Client {tcp.Client.RemoteEndPoint}] {line}");
-                        var parts = line.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
-                        if (parts.Length == 0) continue;
-                        var cmd = parts[0].ToUpper();
-
-                        if (cmd == "LIST")
-                        {
-                            SendSeatList(writer);
-                        }
-                        else if (cmd == "BOOK" && parts.Length >= 3)
-                        {
-                            if (!int.TryParse(parts[1], out int id)) { writer.WriteLine("ERR InvalidId"); continue; }
-                            string name = parts[2];
-                            lock (lockSeats)
-                            {
-                                var seat = seats.Find(s => s.Id == id);
-                                if (seat == null) writer.WriteLine("ERR NotFound");
-                                else if (seat.Booked) writer.WriteLine($"ERR Seat {id} already booked by {seat.By}");
-                                else
-                                {
-                                    seat.Booked = true; seat.By = name;
-                                    writer.WriteLine($"OK Booked {id}");
-                                    Broadcast($"UPDATE {seat.Id} Booked {seat.By}");
-                                }
-                            }
-                        }
-                        else if (cmd == "CANCEL" && parts.Length >= 3)
-                        {
-                            if (!int.TryParse(parts[1], out int id)) { writer.WriteLine("ERR InvalidId"); continue; }
-                            string name = parts[2];
-                            lock (lockSeats)
-                            {
-                                var seat = seats.Find(s => s.Id == id);
-                                if (seat == null) writer.WriteLine("ERR NotFound");
-                                else if (!seat.Booked) writer.WriteLine($"ERR Seat {id} is not booked");
-                                else if (seat.By != name) writer.WriteLine($"ERR Seat {id} booked by {seat.By}");
-                                else
-                                {
-                                    seat.Booked = false; seat.By = "";
-                                    writer.WriteLine($"OK Cancelled {id}");
-                                    Broadcast($"UPDATE {seat.Id} Free ");
-                                }
-                            }
-                        }
-                        else if (cmd == "QUIT")
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            writer.WriteLine("ERR UnknownCommand");
-                        }
+                        Send("ERR Invalid BOOK command");
+                        return;
                     }
-                }
-                catch (IOException) { /* client disconnected abruptly */ }
-                catch (Exception ex) { Console.WriteLine("Client handler error: " + ex.Message); }
-                finally
-                {
-                    lock (lockClients) clients.Remove(writer);
-                    try { tcp.Close(); } catch { }
-                    Console.WriteLine("Client disconnected.");
-                }
+                    HandleBook(parts[1], parts[2]);
+                    break;
+
+                case "CANCEL":
+                    if (parts.Length < 3)
+                    {
+                        Send("ERR Invalid CANCEL command");
+                        return;
+                    }
+                    HandleCancel(parts[1], parts[2]);
+                    break;
+
+                case "QUIT":
+                    Send("OK QUIT");
+                    _running = false;
+                    break;
+
+                default:
+                    Send("ERR Unknown command");
+                    break;
             }
         }
 
-        static void SendSeatList(StreamWriter writer)
+        private void HandleBook(string idStr, string username)
         {
-            lock (lockSeats)
+            if (!int.TryParse(idStr, out int id))
             {
-                foreach (var s in seats)
+                Send("ERR Invalid seat id");
+                return;
+            }
+
+            Seat? seat = Program.GetSeat(id);
+            if (seat == null)
+            {
+                Send("ERR Seat not found");
+                return;
+            }
+
+            lock (seat)
+            {
+                if (seat.IsBooked && !string.Equals(seat.BookedBy, username, StringComparison.OrdinalIgnoreCase))
                 {
-                    writer.WriteLine($"SEAT {s.Id} {(s.Booked ? "Booked" : "Free")} {s.By}");
+                    Send("ERR Seat already booked");
+                    return;
                 }
+
+                seat.IsBooked = true;
+                seat.BookedBy = username;
+
+                Send($"OK BOOK {seat.Id}");
+                Program.BroadcastSeat(seat);
             }
         }
 
-        static void Broadcast(string msg)
+        private void HandleCancel(string idStr, string username)
         {
-            Console.WriteLine("Broadcast: " + msg);
-            lock (lockClients)
+            if (!int.TryParse(idStr, out int id))
             {
-                var remove = new List<StreamWriter>();
-                foreach (var w in clients)
+                Send("ERR Invalid seat id");
+                return;
+            }
+
+            Seat? seat = Program.GetSeat(id);
+            if (seat == null)
+            {
+                Send("ERR Seat not found");
+                return;
+            }
+
+            lock (seat)
+            {
+                if (!seat.IsBooked)
                 {
-                    try { w.WriteLine(msg); }
-                    catch { remove.Add(w); }
+                    Send("ERR Seat not booked");
+                    return;
                 }
-                foreach (var r in remove) clients.Remove(r);
+
+                // Nếu muốn chỉ người đã đặt mới được hủy thì check thêm:
+                // if (!string.Equals(seat.BookedBy, username, StringComparison.OrdinalIgnoreCase)) ...
+
+                seat.IsBooked = false;
+                seat.BookedBy = "";
+
+                Send($"OK CANCEL {seat.Id}");
+                Program.BroadcastSeat(seat);
             }
         }
     }
