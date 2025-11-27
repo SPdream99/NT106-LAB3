@@ -41,6 +41,21 @@ namespace Lab03_Bai06
             try
             {
                 listener = new TcpListener(IPAddress.Any, 8080);
+                string localIp = "127.0.0.1";
+                try
+                {
+                    var host = Dns.GetHostEntry(Dns.GetHostName());
+                    foreach (var addr in host.AddressList)
+                    {
+                        if (addr.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(addr))
+                        {
+                            localIp = addr.ToString();
+                        }
+                    }
+                }
+                catch { }
+                int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+                LogMessage($"Server listening on {localIp}:{port}");
                 listener.Start();
 
                 while (true)
@@ -168,7 +183,7 @@ namespace Lab03_Bai06
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             base.OnFormClosing(e);
-            listener?.Stop();
+            listener.Stop();
             BroadcastMessage("SYSTEM|Server is shutting down.", null);
             BroadcastMessage("SHUTDOWN", null);
             LogMessage("Server stopped.");
@@ -178,7 +193,7 @@ namespace Lab03_Bai06
 
         private void Stop_Click(object sender, EventArgs e)
         {
-            listener?.Stop();
+            listener.Stop();
             BroadcastMessage("SYSTEM|Server is shutting down.", null);
             BroadcastMessage("SHUTDOWN", null);
             LogMessage("Server stopped.");

@@ -58,13 +58,11 @@ namespace TCP_server
     class TcpClientHelper
     {
         int serverport = 8888;
-        // Use loopback so client connects to local machine (127.0.0.1)
-        IPAddress serverAddr = IPAddress.Loopback;
         TcpClient client = new TcpClient();
 
         public void Connect()
         {
-            client.Connect(serverAddr, serverport);
+            client.Connect("10.45.149.88", serverport);
         }
         public void Send(string message)
         {

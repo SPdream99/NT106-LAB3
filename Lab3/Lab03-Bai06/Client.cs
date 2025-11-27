@@ -76,14 +76,6 @@ namespace Lab03_Bai06
             {
                 LogMessage("Lost connection to server.");
                 LogMessage(ex.Message);
-                listenThread?.Abort();
-                writer?.Close();
-                reader?.Close();
-                client?.Close();
-                textBox1.Text = null;
-                button1.Enabled = true;
-                textBox1.Enabled = true;
-                UpdateUserList(new string[] { });
             }
         }
 
@@ -91,7 +83,6 @@ namespace Lab03_Bai06
         {
             string[] parts = message.Split(new char[] { '|' }, 4);
             string command = parts[0];
-            LogMessage(command);
             switch (command)
             {
                 case "MSG":
@@ -111,11 +102,10 @@ namespace Lab03_Bai06
 
                 case "SHUTDOWN":
                 case "﻿SHUTDOWN":
-                    LogMessage("Lost connection to server.");
-                    listenThread?.Abort();
-                    writer?.Close();
-                    reader?.Close();
-                    client?.Close();
+                    listenThread.Abort();
+                    writer.Close();
+                    reader.Close();
+                    client.Close();
                     textBox1.Text = null;
                     button1.Enabled = true;
                     textBox1.Enabled = true;
