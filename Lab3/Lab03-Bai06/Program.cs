@@ -8,9 +8,6 @@ namespace Lab03_Bai06
 {
     internal static class Program
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
         [STAThread]
         static void Main()
         {
@@ -22,5 +19,6 @@ namespace Lab03_Bai06
     public static class GlobalSettings
     {
         public static string ServerAddress { get; set; } = "127.0.0.1";
+        public static string Port { get; set; } = "8080";
     }
 }

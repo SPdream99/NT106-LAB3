@@ -17,6 +17,7 @@ namespace Lab03_Bai06
         {
             InitializeComponent();
             textBox1.Text = GlobalSettings.ServerAddress;
+            textBox2.Text = GlobalSettings.Port;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -33,6 +34,25 @@ namespace Lab03_Bai06
             {
                 button1.DialogResult = DialogResult.Cancel;
                 MessageBox.Show("Invalid IP Address", "Error", MessageBoxButtons.OK);
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            int portNumber;
+            if (int.TryParse(textBox2.Text, out portNumber))
+            {
+                if (portNumber >= 1 && portNumber <= 65535)
+                {
+                    GlobalSettings.Port = textBox2.Text;
+                    button2.DialogResult = DialogResult.OK;
+                    MessageBox.Show("Saved");
+                }
+            }
+            if (portNumber < 1 && portNumber > 65535)
+            {
+                button2.DialogResult = DialogResult.Cancel;
+                MessageBox.Show("Invalid Port", "Error", MessageBoxButtons.OK);
             }
         }
     }

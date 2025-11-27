@@ -32,6 +32,7 @@ namespace Lab03_Bai06
             listenerThread.Start();
 
             Listen.Enabled = false;
+            Stop.Enabled = true;
             LogMessage("Server started. Waiting for connections...");
         }
 
@@ -60,7 +61,7 @@ namespace Lab03_Bai06
         {
             TcpClient client = (TcpClient)obj;
             NetworkStream stream = client.GetStream();
-            StreamReader reader = new StreamReader(stream, Encoding.UTF8);
+            StreamReader reader = new StreamReader(stream, Encoding.Unicode);
             string username = null;
 
             try
@@ -109,15 +110,15 @@ namespace Lab03_Bai06
 
             switch (command)
             {
-                case "PUBLIC_MSG":
+                case "MSG":
                     string publicMsg = $"MSG|{fromUser}|{parts[1]}";
-                    BroadcastMessage(publicMsg, fromUser);
+                    BroadcastMessage(publicMsg);
                     LogMessage($"Public msg from {fromUser}: {parts[1]}");
                     break;
             }
         }
         
-        private void BroadcastMessage(string message, string excludeUser)
+        private void BroadcastMessage(string message, string excludeUser = null)
         {
             lock (clients)
             {
@@ -149,26 +150,40 @@ namespace Lab03_Bai06
 
         private void LogMessage(string message)
         {
-            if (richTextBox1.InvokeRequired)
+            try
             {
-                richTextBox1.Invoke(new MethodInvoker(delegate { LogMessage(message); }));
+                if (richTextBox1.InvokeRequired)
+                {
+                    richTextBox1.Invoke(new MethodInvoker(delegate { LogMessage(message); }));
+                }
+                else
+                {
+                    richTextBox1.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\n");
+                    richTextBox1.ScrollToCaret();
+                }
             }
-            else
-            {
-                richTextBox1.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\n");
-                richTextBox1.ScrollToCaret();
-            }
+            catch (Exception) { }
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             base.OnFormClosing(e);
             listener?.Stop();
+            BroadcastMessage("SYSTEM|Server is shutting down.", null);
+            BroadcastMessage("SHUTDOWN", null);
+            LogMessage("Server stopped.");
+            Listen.Enabled = true;
+            Stop.Enabled = false;
         }
 
         private void Stop_Click(object sender, EventArgs e)
         {
             listener?.Stop();
+            BroadcastMessage("SYSTEM|Server is shutting down.", null);
+            BroadcastMessage("SHUTDOWN", null);
+            LogMessage("Server stopped.");
+            Listen.Enabled = true;
+            Stop.Enabled = false;
         }
     }
 }

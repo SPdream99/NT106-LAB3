@@ -31,7 +31,7 @@ namespace Lab03_Bai06
         {
             if (string.IsNullOrEmpty(textBox1.Text))
             {
-                MessageBox.Show("Please enter a name.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Vui lòng nhập tên người dùng.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
@@ -39,11 +39,11 @@ namespace Lab03_Bai06
             try
             {
                 client = new TcpClient();
-                client.Connect(GlobalSettings.ServerAddress, 8080);
+                client.Connect(GlobalSettings.ServerAddress, int.Parse(GlobalSettings.Port));
 
                 stream = client.GetStream();
-                reader = new StreamReader(stream, Encoding.UTF8);
-                writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
+                reader = new StreamReader(stream, Encoding.Unicode);
+                writer = new StreamWriter(stream, Encoding.Unicode) { AutoFlush = true };
 
                 writer.WriteLine($"CONNECT|{this.username}");
 
@@ -72,9 +72,18 @@ namespace Lab03_Bai06
                     HandleServerMessage(message);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 LogMessage("Lost connection to server.");
+                LogMessage(ex.Message);
+                listenThread?.Abort();
+                writer?.Close();
+                reader?.Close();
+                client?.Close();
+                textBox1.Text = null;
+                button1.Enabled = true;
+                textBox1.Enabled = true;
+                UpdateUserList(new string[] { });
             }
         }
 
@@ -82,19 +91,35 @@ namespace Lab03_Bai06
         {
             string[] parts = message.Split(new char[] { '|' }, 4);
             string command = parts[0];
-            MessageBox.Show((command=="MSG") ? "123":"0");
+            LogMessage(command);
             switch (command)
             {
                 case "MSG":
+                case "﻿MSG":
                     LogMessage($"{parts[1]}: {parts[2]}");
                     break;
 
                 case "SYSTEM":
+                case "﻿SYSTEM":
                     LogMessage($"[{parts[1]}]");
                     break;
 
+                case "﻿USER_LIST":
                 case "USER_LIST":
                     UpdateUserList(parts[1].Split(','));
+                    break;
+
+                case "SHUTDOWN":
+                case "﻿SHUTDOWN":
+                    LogMessage("Lost connection to server.");
+                    listenThread?.Abort();
+                    writer?.Close();
+                    reader?.Close();
+                    client?.Close();
+                    textBox1.Text = null;
+                    button1.Enabled = true;
+                    textBox1.Enabled = true;
+                    UpdateUserList(new string[] { });
                     break;
             }
         }
@@ -106,21 +131,28 @@ namespace Lab03_Bai06
             string message = textBox2.Text;
             string selectedUser = Users.SelectedItem as string;
 
-            writer.WriteLine($"PUBLIC_MSG|{message}");
+            writer.WriteLine($"MSG|{message}");
 
             textBox2.Clear();
         }
 
         private void LogMessage(string message)
         {
-            if (richTextBox1.InvokeRequired)
+            try
             {
-                richTextBox1.Invoke(new MethodInvoker(delegate { LogMessage(message); }));
+                if (richTextBox1.InvokeRequired)
+                {
+                    richTextBox1.Invoke(new MethodInvoker(delegate { LogMessage(message); }));
+                }
+                else
+                {
+                    richTextBox1.AppendText($"{message}\n");
+                    richTextBox1.ScrollToCaret();
+                }
             }
-            else
+            catch (Exception)
             {
-                richTextBox1.AppendText($"{message}\n");
-                richTextBox1.ScrollToCaret();
+
             }
         }
 
