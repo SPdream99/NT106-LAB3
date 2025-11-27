@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Data.SQLite;
 using System.Drawing;
 using System.IO;
 using System.Net.Sockets;
 using System.Windows.Forms;
+using System.Data.SQLite;
 
 namespace Lab03_Bai05
 {
@@ -13,8 +13,6 @@ namespace Lab03_Bai05
         {
             InitializeComponent();
             LoadFoodList();
-            txtIP.Text = '192.168.1.5';
-            txtPort = '8080';
         }
         private void LoadFoodList()
         {
@@ -57,7 +55,9 @@ namespace Lab03_Bai05
                 using (StreamWriter writer = new StreamWriter(stream) { AutoFlush = true })
                 using (StreamReader reader = new StreamReader(stream))
                 {
-                    string command = $"ADD_FOOD|{txtFood.Text}|{txtBrowseImage.Text}|{txtName.Text}";
+                    byte[] imageBytes = File.ReadAllBytes(txtBrowseImage.Text);
+                    string base64Image = Convert.ToBase64String(imageBytes);
+                    string command = $"ADD_FOOD|{txtFood.Text}|{base64Image}|{txtName.Text}";
                     writer.WriteLine(command);
                     string result = reader.ReadLine();
                     if (result == "OK")

@@ -19,4 +19,8 @@ namespace Lab03_Bai06
             Application.Run(new Lab3B6());
         }
     }
+    public static class GlobalSettings
+    {
+        public static string ServerAddress { get; set; } = "127.0.0.1";
+    }
 }

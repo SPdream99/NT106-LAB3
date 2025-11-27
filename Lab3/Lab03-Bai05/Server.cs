@@ -9,7 +9,7 @@ class Server
 {
     private const int Port = 5000;
 
-    static void Main()
+    static void server()
     {
         Console.WriteLine("Server đang chạy...");
         TcpListener listener = new TcpListener(IPAddress.Any, Port);
@@ -31,7 +31,7 @@ class Server
             using (StreamWriter writer = new StreamWriter(stream) { AutoFlush = true })
             {
                 string request = reader.ReadLine();
-                Console.WriteLine("Client gửi: " + request);
+                Console.WriteLine("Client send: " + request);
 
                 if (request == "GET_FOOD_LIST")
                 {
