@@ -40,6 +40,21 @@ namespace Lab03_Bai06
             try
             {
                 listener = new TcpListener(IPAddress.Any, 8080);
+                string localIp = "127.0.0.1";
+                try
+                {
+                    var host = Dns.GetHostEntry(Dns.GetHostName());
+                    foreach (var addr in host.AddressList)
+                    {
+                        if (addr.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(addr))
+                        {
+                            localIp = addr.ToString();
+                        }
+                    }
+                }
+                catch { }
+                int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+                LogMessage($"Server listening on {localIp}:{port}");
                 listener.Start();
 
                 while (true)
@@ -149,15 +164,19 @@ namespace Lab03_Bai06
 
         private void LogMessage(string message)
         {
-            if (richTextBox1.InvokeRequired)
+            try
             {
-                richTextBox1.Invoke(new MethodInvoker(delegate { LogMessage(message); }));
+                if (richTextBox1.InvokeRequired)
+                {
+                    richTextBox1.Invoke(new MethodInvoker(delegate { LogMessage(message); }));
+                }
+                else
+                {
+                    richTextBox1.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\n");
+                    richTextBox1.ScrollToCaret();
+                }
             }
-            else
-            {
-                richTextBox1.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\n");
-                richTextBox1.ScrollToCaret();
-            }
+            catch { }
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
